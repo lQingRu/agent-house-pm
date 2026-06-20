@@ -9,7 +9,7 @@ from bot.config import get_config
 from bot.db import init_db
 from bot.handlers import dm_message_handler
 from bot.dismiss import dismiss_callback_handler
-from bot.commands import list_command, upcoming_command, start_command, help_command, add_command
+from bot.commands import list_command, upcoming_command, start_command, help_command, add_command, config_command
 from bot.scheduler import run_reminder_job
 from bot.calendar_service import run_calendar_job
 
@@ -39,6 +39,7 @@ def main() -> None:
     app.add_handler(CommandHandler("add", add_command))
     app.add_handler(CommandHandler("list", list_command))
     app.add_handler(CommandHandler("upcoming", upcoming_command))
+    app.add_handler(CommandHandler("config", config_command))
 
     h, m = (int(x) for x in cfg.reminder_job_time.split(":"))
     app.job_queue.run_daily(run_reminder_job, time=dtime(h, m))

@@ -17,6 +17,7 @@ _HELP_TEXT = (
     "*/add* — show this add reminder\n"
     "*/list* — list all tracked items\n"
     "*/upcoming* — items expiring in the next 7 days\n"
+    "*/config* — show current bot settings\n"
     "*/help* — show this message"
 )
 
@@ -41,6 +42,19 @@ async def add_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Non
         "The category in parentheses is optional.",
         parse_mode="Markdown",
     )
+
+
+async def config_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    cfg = context.bot_data["config"]
+    lines = [
+        "⚙️ <b>Bot configuration</b>",
+        "",
+        f"Reminder time: {cfg.reminder_job_time} daily",
+        "Reminder schedule: 7 days, 3 days, on the day",
+    ]
+    if cfg.google_calendar_id and cfg.google_service_account_key_path:
+        lines.append("Google Calendar: connected ✅")
+    await update.message.reply_text("\n".join(lines), parse_mode="HTML")
 
 
 def build_list_text(db_path: str) -> str:
