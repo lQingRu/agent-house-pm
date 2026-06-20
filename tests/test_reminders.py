@@ -91,3 +91,10 @@ def test_get_due_reminders_multiple_items_different_thresholds(db_path):
     assert len(dues) == 3
     levels = {d.level for d in dues}
     assert levels == {"7d", "3d", "0d"}
+
+
+def test_get_due_reminders_includes_submitted_by(db_path):
+    add_item(db_path, "Panadol", 7, "medicine")
+    dues = get_due_reminders(db_path, today=date.today())
+    assert len(dues) == 1
+    assert dues[0].submitted_by == 42

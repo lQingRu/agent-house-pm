@@ -16,13 +16,14 @@ class ReminderDue:
     category: Optional[str]
     expiry_date: date
     level: str
+    submitted_by: int
 
 
 def get_due_reminders(db_path: str, today: date) -> list[ReminderDue]:
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     items = conn.execute(
-        "SELECT id, name, category, expiry_date FROM expiry_items WHERE dismissed_at IS NULL"
+        "SELECT id, name, category, expiry_date, submitted_by FROM expiry_items WHERE dismissed_at IS NULL"
     ).fetchall()
 
     due = []
@@ -43,6 +44,7 @@ def get_due_reminders(db_path: str, today: date) -> list[ReminderDue]:
                 category=item["category"],
                 expiry_date=expiry,
                 level=level,
+                submitted_by=item["submitted_by"],
             ))
 
     conn.close()

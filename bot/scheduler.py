@@ -1,11 +1,19 @@
 import logging
-from datetime import date, time as dtime
+from datetime import date
 
 from telegram.ext import ContextTypes
 
 from bot.reminders import get_due_reminders, record_reminder_sent
 
 logger = logging.getLogger(__name__)
+
+
+async def _resolve_name(bot, user_id: int) -> str:
+    try:
+        chat = await bot.get_chat(user_id)
+        return chat.first_name or chat.username or str(user_id)
+    except Exception:
+        return str(user_id)
 
 
 async def run_reminder_job(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -17,6 +25,8 @@ async def run_reminder_job(context: ContextTypes.DEFAULT_TYPE) -> None:
         logger.error("Reminder job failed to fetch due reminders", exc_info=True)
         return
 
+    from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
     for due in dues:
         category_str = f" ({due.category})" if due.category else ""
         days_remaining = (due.expiry_date - today).days
@@ -25,11 +35,13 @@ async def run_reminder_job(context: ContextTypes.DEFAULT_TYPE) -> None:
         else:
             days_str = f"expires in {days_remaining} days ({due.expiry_date.strftime('%-d %b %Y')})"
 
+        submitter_name = await _resolve_name(context.bot, due.submitted_by)
+
         text = (
             f"⏰ Expiry reminder — {due.item_name}{category_str}\n"
-            f"{days_str.capitalize()}"
+            f"{days_str.capitalize()}\n"
+            f"Added by {submitter_name}"
         )
-        from telegram import InlineKeyboardButton, InlineKeyboardMarkup
         keyboard = InlineKeyboardMarkup(
             [[InlineKeyboardButton("Dismiss ✓", callback_data=f"dismiss:{due.item_id}")]]
         )
