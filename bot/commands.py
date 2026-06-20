@@ -6,6 +6,8 @@ from typing import Optional
 from telegram import Update
 from telegram.ext import ContextTypes
 
+from bot.utils import resolve_display_name
+
 logger = logging.getLogger(__name__)
 
 _HELP_TEXT = (
@@ -121,11 +123,7 @@ async def list_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     names: dict[int, str] = {}
     for row in user_id_rows:
         uid = row["submitted_by"]
-        try:
-            chat = await context.bot.get_chat(uid)
-            names[uid] = chat.first_name or chat.username or str(uid)
-        except Exception:
-            names[uid] = str(uid)
+        names[uid] = await resolve_display_name(context.bot, uid)
 
     text = build_list_text(cfg.db_path, names=names)
     await update.message.reply_text(text)
