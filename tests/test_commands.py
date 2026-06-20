@@ -69,3 +69,15 @@ def test_build_upcoming_text_excludes_dismissed_items(db_path):
 def test_build_upcoming_text_empty_when_nothing_due(db_path):
     text = build_upcoming_text(db_path, today=date.today())
     assert "nothing" in text.lower() or "no items" in text.lower()
+
+
+def test_build_list_text_shows_submitter_when_names_provided(db_path):
+    add_item(db_path, "Panadol", 7)  # submitted_by=42 per the fixture
+    text = build_list_text(db_path, names={42: "Alice"})
+    assert "added by Alice" in text
+
+
+def test_build_list_text_omits_submitter_when_names_not_provided(db_path):
+    add_item(db_path, "Panadol", 7)
+    text = build_list_text(db_path)
+    assert "added by" not in text
