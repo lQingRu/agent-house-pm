@@ -4,6 +4,7 @@ from typing import Optional
 
 
 def get_item(db_path: str, item_id: int) -> Optional[dict]:
+    """Return item dict, or None if the item doesn't exist or has been dismissed."""
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     row = conn.execute(
@@ -39,6 +40,7 @@ def update_item_expiry(db_path: str, item_id: int, new_expiry: date) -> None:
 
 
 def delete_item(db_path: str, item_id: int) -> None:
+    # FK constraints are disabled by default in SQLite; reminder_log rows are left as orphans.
     conn = sqlite3.connect(db_path)
     conn.execute("DELETE FROM expiry_items WHERE id = ?", (item_id,))
     conn.commit()
