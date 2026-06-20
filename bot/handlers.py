@@ -1,4 +1,7 @@
+import html as _html
 import logging
+from datetime import date, timedelta
+
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -6,6 +9,21 @@ from bot.parser import parse_item_message
 from bot.ingestion import store_expiry_item
 
 logger = logging.getLogger(__name__)
+
+_THRESHOLDS = [("7 days", 7), ("3 days", 3), ("on the day", 0)]
+
+
+def build_reminder_schedule_html(expiry_date: date) -> str:
+    today = date.today()
+    parts = []
+    for label, days in _THRESHOLDS:
+        fire_date = expiry_date - timedelta(days=days)
+        if fire_date < today:
+            parts.append(f"<s>{label}</s>")
+        else:
+            date_display = fire_date.strftime("%-d %b")
+            parts.append(f"✓ {label} ({date_display})")
+    return ", ".join(parts)
 
 
 async def dm_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -38,12 +56,14 @@ async def dm_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE)
         )
         logger.info("item_submitted name=%s submitted_by=%s", result.name, update.effective_user.id)
 
-        category_str = f" ({result.category})" if result.category else ""
+        category_str = f" ({_html.escape(result.category)})" if result.category else ""
         date_str = result.expiry_date.strftime("%-d %b %Y")
+        schedule_html = build_reminder_schedule_html(result.expiry_date)
+
         await update.message.reply_text(
-            f"Got it! I've noted **{result.name}**{category_str} — expires **{date_str}**. "
-            f"I'll remind the group at 7 days, 3 days, and on the day.",
-            parse_mode="Markdown",
+            f"Got it! I've noted <b>{_html.escape(result.name)}</b>{category_str} — expires <b>{date_str}</b>.\n\n"
+            f"Reminders: {schedule_html}",
+            parse_mode="HTML",
         )
     except Exception:
         logger.error("Unhandled exception in dm_message_handler", exc_info=True)
