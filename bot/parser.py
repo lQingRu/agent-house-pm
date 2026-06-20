@@ -20,6 +20,20 @@ _DATE_KEYWORDS = re.compile(
 _CATEGORY_PARENS = re.compile(r"\(([^)]+)\)")
 
 
+def parse_date(text: str) -> Optional[date]:
+    """Parse a bare date string; returns None for past or unparseable dates."""
+    parsed = dateparser.parse(
+        text,
+        settings={"PREFER_DATES_FROM": "future", "RETURN_AS_TIMEZONE_AWARE": False},
+    )
+    if parsed is None:
+        return None
+    result = parsed.date()
+    if result < date.today():
+        return None
+    return result
+
+
 def parse_item_message(text: str) -> Optional[ParseResult]:
     # Extract category from parentheses
     category_match = _CATEGORY_PARENS.search(text)
@@ -32,18 +46,8 @@ def parse_item_message(text: str) -> Optional[ParseResult]:
 
     date_text = parts[-1].strip() if len(parts) > 1 else clean
 
-    parsed = dateparser.parse(
-        date_text,
-        settings={"PREFER_DATES_FROM": "future", "RETURN_AS_TIMEZONE_AWARE": False},
-    )
-    if parsed is None:
-        return None
-
-    if not name_part:
-        return None
-
-    expiry = parsed.date()
-    if expiry < date.today():
+    expiry = parse_date(date_text)
+    if expiry is None or not name_part:
         return None
 
     return ParseResult(name=name_part, expiry_date=expiry, category=category)

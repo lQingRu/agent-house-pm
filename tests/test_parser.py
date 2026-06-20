@@ -1,6 +1,6 @@
 import pytest
 from datetime import date, timedelta
-from bot.parser import parse_item_message, ParseResult
+from bot.parser import parse_item_message, parse_date, ParseResult
 
 
 def test_parse_simple_item_with_absolute_date():
@@ -45,3 +45,29 @@ def test_parse_pantry_item():
     assert result.name == "canned beans"
     assert result.category == "pantry"
     assert result.expiry_date == date(2027, 3, 15)
+
+
+# Tests for parse_date helper
+def test_parse_date_standard_format():
+    result = parse_date("15 Jul 2026")
+    assert result == date(2026, 7, 15)
+
+
+def test_parse_date_iso_format():
+    result = parse_date("2026-07-15")
+    assert result == date(2026, 7, 15)
+
+
+def test_parse_date_month_year_only():
+    result = parse_date("Jul 2026")
+    assert result is not None
+    assert result.year == 2026
+    assert result.month == 7
+
+
+def test_parse_date_invalid_returns_none():
+    assert parse_date("banana") is None
+
+
+def test_parse_date_past_date_returns_none():
+    assert parse_date("1 Jan 2020") is None
